@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Garage Invoice</title>
+
+<!-- PDF LIBRARY (IMPORTANT) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+body { font-family: Arial; background:#eee; }
+.bill { width:800px; margin:auto; background:#fff; padding:20px; }
+
+.header { display:flex; justify-content:space-between; }
+.logo img { width:100px; }
+
+.section { background:#f3d6e4; padding:5px; margin-top:10px; font-weight:bold; }
+
+table { width:100%; border-collapse: collapse; margin-top:10px; }
+th, td { border:1px solid #ccc; padding:5px; text-align:center; }
+
+.total { text-align:right; margin-top:10px; font-weight:bold; }
+
+.sign { display:flex; justify-content:space-between; margin-top:30px; }
+
+input, textarea { padding:5px; margin:5px; }
+
+button { padding:10px; margin:5px; background:green; color:white; border:none; cursor:pointer; }
+</style>
+
+</head>
+
+<body>
+
+<div class="bill" id="invoice">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">
+    <img src="logo.png">
+  </div>
+
+  <div>
+    <h2>Carx Auto Garage</h2>
+    <div>Near Chetak Hotel</div>
+    <div>Mobile: 7028276806</div>
+  </div>
+
+  <div>
+    <b>Estimate</b><br>
+    Date: <span id="date"></span>
+  </div>
+</div>
+
+<!-- CUSTOMER -->
+<div class="section">BILL TO</div>
+Name: <input id="name">
+Mobile: <input id="phone">
+
+<!-- VEHICLE -->
+<div class="section">VEHICLE INFO</div>
+Vehicle No: <input id="veh">
+
+<!-- SPARE -->
+<div class="section">Spare Items</div>
+Item: <input id="sitem">
+Qty: <input id="sqty" type="number">
+Rate: <input id="srate" type="number">
+Discount: <input id="sdisc" type="number">
+<button onclick="addSpare()">Add</button>
+
+<table id="spareTable">
+<tr><th>Item</th><th>Qty</th><th>Rate</th><th>Discount</th><th>Amount</th></tr>
+</table>
+
+<!-- LABOUR -->
+<div class="section">Labour Charges</div>
+Item: <input id="litem">
+Qty: <input id="lqty" type="number">
+Rate: <input id="lrate" type="number">
+Discount: <input id="ldisc" type="number">
+<button onclick="addLabour()">Add</button>
+
+<table id="labourTable">
+<tr><th>Item</th><th>Qty</th><th>Rate</th><th>Discount</th><th>Amount</th></tr>
+</table>
+
+<!-- TOTAL -->
+<div class="total">Total: ₹<span id="total">0</span></div>
+
+Payable: <input id="payable"><br>
+Paid: <input id="paid" oninput="calcBalance()"><br>
+Balance: <span id="balance">0</span>
+
+<!-- REMARK -->
+<div class="section">Remarks</div>
+<textarea id="remark" rows="3" style="width:100%"></textarea>
+
+<!-- SIGN -->
+<div class="sign">
+  <div>Customer Signature</div>
+  <div>Authorized Signature</div>
+</div>
+
+<!-- BUTTONS -->
+<button onclick="downloadPDF()">Download PDF</button>
+<button onclick="sendWhatsApp()">Send WhatsApp</button>
+
+</div>
+
+<script>
+let total = 0;
+let billText = "";
+
+document.getElementById("date").innerText = new Date().toLocaleDateString();
+
+function addSpare(){
+  let item = document.getElementById("sitem").value;
+  let qty = document.getElementById("sqty").value;
+  let rate = document.getElementById("srate").value;
+  let disc = document.getElementById("sdisc").value || 0;
+
+  let amt = (qty * rate) - disc;
+  total += amt;
+
+  let table = document.getElementById("spareTable");
+  let row = table.insertRow();
+
+  row.insertCell(0).innerText = item;
+  row.insertCell(1).innerText = qty;
+  row.insertCell(2).innerText = rate;
+  row.insertCell(3).innerText = disc;
+  row.insertCell(4).innerText = amt;
+
+  billText += item + " = ₹" + amt + "%0A";
+
+  updateTotal();
+}
+
+function addLabour(){
+  let item = document.getElementById("litem").value;
+  let qty = document.getElementById("lqty").value;
+  let rate = document.getElementById("lrate").value;
+  let disc = document.getElementById("ldisc").value || 0;
+
+  let amt = (qty * rate) - disc;
+  total += amt;
+
+  let table = document.getElementById("labourTable");
+  let row = table.insertRow();
+
+  row.insertCell(0).innerText = item;
+  row.insertCell(1).innerText = qty;
+  row.insertCell(2).innerText = rate;
+  row.insertCell(3).innerText = disc;
+  row.insertCell(4).innerText = amt;
+
+  billText += item + " = ₹" + amt + "%0A";
+
+  updateTotal();
+}
+
+function updateTotal(){
+  document.getElementById("total").innerText = total;
+  document.getElementById("payable").value = total;
+}
+
+function calcBalance(){
+  let paid = document.getElementById("paid").value || 0;
+  document.getElementById("balance").innerText = total - paid;
+}
+
+function downloadPDF(){
+  let element = document.getElementById("invoice");
+
+  let opt = {
+    margin: 5,
+    filename: 'Invoice.pdf',
+    image: { type: 'jpeg', quality: 1 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf().set(opt).from(element).save();
+}
+
+function sendWhatsApp(){
+  let phone = document.getElementById("phone").value;
+  let name = document.getElementById("name").value;
+
+  let msg = "🧾 Invoice%0A";
+  msg += "Customer: " + name + "%0A";
+  msg += billText;
+  msg += "%0ATotal: ₹" + total;
+
+  let url = "https://wa.me/91" + phone + "?text=" + msg;
+
+  window.open(url, "_blank");
+}
+</script>
+
+</body>
+</html>
